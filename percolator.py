@@ -63,7 +63,9 @@ class PercolationPlayer:
 	# out of all the possible triangles that can formed, check which ones have a least two
 	# different colorings (aka which one would allow the center (us) to win the game) list
 	# is a list of 2 other vertices that attach to the center vertex
-	def checkValidTriangle(list, vertex):
+	def checkValidTriangle(neighbor1, neighbor2, vertex):
+		
+
 		countColor = 0;
 		for element in list:
 			if element.color == vertex.color:
@@ -74,23 +76,25 @@ class PercolationPlayer:
 
 
 	# if we care about valid triangles
-	def getNumTriangles(graph, vertex):
-		allNeighbors = Neighbors(graph, vertex)
-		foo = 0
-		validTriangles = []
-		while (foo <= len(allNeighbors) - 2):
-			for x in range(foo + 1, len(allNeighbors)):
-				if PercolationPlayer.checkValidTriangle([allNeighbors[foo], allNeighbors[x]], vertex):
-					validTriangles.append([allNeighbors[foo], allNeighbors[x]])
-		numTriangles = len(validTriangles)
-		return numTriangles * (numTriangles - 1) / 2
+	#def getNumTriangles(graph, vertex):
+		#allNeighbors = PercolationPlayer.Neighbors(graph, vertex)
+		#index = 0
+		#numTriangles = 0
+		#while (index <= len(allNeighbors) - 1):
+			#for x in range(index + 1, len(allNeighbors)):
+				#neighbor1 = allNeighbors[index]
+				#neighbor2 = allNeighbors[x]
+				#if neighbor1.color != vertex.color or neighbor2.color != vertex.color:
+					#numTriangles += 1
+
+		#return numTriangles
 
 
 	#if we don’t care about valid triangles
-	def getNumTriangles(graph, vertex):
-		allNeighbors = PercolationPlayer.Neighbors(graph, vertex)
-		numNeighbors = len(allNeighbors)
-		return numNeighbors * (numNeighbors - 1) / 2
+	#def getNumTriangles(graph, vertex):
+		#allNeighbors = PercolationPlayer.Neighbors(graph, vertex)
+		#numNeighbors = len(allNeighbors)
+		#return numNeighbors * (numNeighbors - 1) / 2
 
 
 
@@ -103,7 +107,7 @@ class PercolationPlayer:
 			if vertex.color == player:
 				graph_copy = copy.deepcopy(graph)
 				send_in_vertices = graph_copy.V
-				vertex_send_in = Vertex("a") #placeholder
+				vertex_send_in = Vertex(3) #placeholder
 				for v in send_in_vertices:
 					if v.color == vertex.color and v.index == vertex.index: #should be the same
 						vertex_send_in = v
@@ -175,28 +179,39 @@ class PercolationPlayer:
 		# When down to the last four total vertices — look ahead
 		if len(graph.V) <= 4 and len(graph.V) > 1:
 			future_states = PercolationPlayer.getFutureStates(graph, player)
+			print("future states", future_states)
 			for vertex, graph_state in future_states.items():
 				# check if graph_state represents a winning state (need to determine center vertex)
 				middle_vertex =  PercolationPlayer.GetCenterVertex(graph.E, graph.V)
 				if middle_vertex.color == player:
+					print("middle vertex", middle_vertex)
 					return middle_vertex
 
 			# if there aren’t any winners then pick randomly
 			for v in graph.V:
 				if v.color == player:
+					print("random pick", v)
 					return v
 		
 		# If not down to last four vertices, proceed as usual
-		min_num_triangles = 100
-		chosen_vertex = Vertex(3)
-		for vertex in graph.V:
-			if vertex.color == player:
-				num_triangles = PercolationPlayer.getNumTriangles(graph, vertex)
-				if num_triangles < min_num_triangles:
-					Min_num_triangles = num_triangles
-					chosen_vertex = vertex
-		
-		return vertex
+		#min_num_triangles = 1000
+		#chosen_vertex = Vertex(3)
+		#for vertex in graph.V:
+			#if vertex.color == player:
+				#num_triangles = PercolationPlayer.getNumTriangles(graph, vertex)
+				#print("num triangles", num_triangles)
+				#print("vertex for triangles", vertex)
+				#print()
+
+				#if num_triangles < min_num_triangles:
+					#min_num_triangles = num_triangles
+					#chosen_vertex = vertex
+		for v_chosen in graph.V:
+			if v_chosen.color == player:
+				print(v_chosen)
+				return v_chosen
+		#print("chosen vertex", vertex)
+		#return vertex
 
 	
 	# Feel free to put any personal driver code here.
@@ -265,7 +280,7 @@ class TimeoutError(Exception):
     pass
 
 class Timeout:
-    def __init__(self, seconds=0.5, error_message="Timeout of {0} seconds hit"):
+    def __init__(self, seconds=60, error_message="Timeout of {0} seconds hit"):
         self.seconds = seconds
         self.error_message = error_message.format(seconds)
     def handle_timeout(self, signum, frame):
