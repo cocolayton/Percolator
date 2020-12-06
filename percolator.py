@@ -60,34 +60,19 @@ class PercolationPlayer:
 		return neighbors
 
 
-	# out of all the possible triangles that can formed, check which ones have a least two
-	# different colorings (aka which one would allow the center (us) to win the game) list
-	# is a list of 2 other vertices that attach to the center vertex
-	def checkValidTriangle(neighbor1, neighbor2, vertex):
-		
-
-		countColor = 0;
-		for element in list:
-			if element.color == vertex.color:
-				countColor = countColor + 1
-		if countColor == 3:
-			return False
-		return True
-
-
 	# if we care about valid triangles
-	#def getNumTriangles(graph, vertex):
-		#allNeighbors = PercolationPlayer.Neighbors(graph, vertex)
-		#index = 0
-		#numTriangles = 0
-		#while (index <= len(allNeighbors) - 1):
-			#for x in range(index + 1, len(allNeighbors)):
-				#neighbor1 = allNeighbors[index]
-				#neighbor2 = allNeighbors[x]
-				#if neighbor1.color != vertex.color or neighbor2.color != vertex.color:
-					#numTriangles += 1
+	def getNumTriangles(graph, vertex):
+		allNeighbors = PercolationPlayer.Neighbors(graph, vertex)
+		index = 0
+		numTriangles = 0
+		while (index <= len(allNeighbors) - 1):
+			for x in range(index + 1, len(allNeighbors)):
+				neighbor1 = allNeighbors[index]
+				neighbor2 = allNeighbors[x]
+				if neighbor1.color != vertex.color or neighbor2.color != vertex.color:
+					numTriangles += 1
 
-		#return numTriangles
+		return numTriangles
 
 
 	#if we don’t care about valid triangles
