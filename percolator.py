@@ -50,29 +50,35 @@ class PercolationPlayer:
 
 	# get neighbors of a given vertex
 	def Neighbors(graph, v):
-		neighbors = []
+		neighbors = {}
 		graph_edges = graph.E
 		for element in graph_edges:
 			if element.a == v:
-				neighbors.append(element.b)
+				vertex2 = element.b
+				neighbors[vertex2] = vertex2.color
 			elif element.b == v:
-				neighbors.append(element.a)
+				vertex1 = element.a
+				neighbors[vertex1] = vertex1.color
 		return neighbors
 
 
 	# if we care about valid triangles
 	def getNumTriangles(graph, vertex):
 		allNeighbors = PercolationPlayer.Neighbors(graph, vertex)
-		index = 0
-		numTriangles = 0
-		while (index <= len(allNeighbors) - 1):
-			for x in range(index + 1, len(allNeighbors)):
-				neighbor1 = allNeighbors[index]
-				neighbor2 = allNeighbors[x]
-				if neighbor1.color != vertex.color or neighbor2.color != vertex.color:
-					numTriangles += 1
 
-		return numTriangles
+		for v, color in allNeighbors.items():
+			neighbor1 = vertex
+			color1 = color
+
+			if color1 != vertex.color:
+				triangle_list = allNeighbors.keys() # dict not list
+				print(triangle_list)
+				return len(triangle_list)
+
+			else:
+				triangle_list = [neighbor_vertex for neighbor_vertex, neighbor_color in allNeighbors.items() if neighbor_color != vertex.color]
+				print(triangle_list)
+				return len(triangle_list)
 
 
 	#if we don’t care about valid triangles
@@ -158,45 +164,81 @@ class PercolationPlayer:
 			pick_big = True
 			return vertex
 
+	def CheckIfWin4(graph_state, player):
+		if len(graph_state.E) == 3: # a fully connected trianlge = we win since going second
+			return True
+		else:
+			middle_vertex = PercolationPlayer.GetCenterVertex(graph_state.E, graph_state.V)
+			if middle_vertex.color == player:
+				return True
+			else:
+				return False
+
+	def CheckIfWin3(graph_state, player):
+		if len(graph_state.E) == 2:
+			middle_vertex = PercolationPlayer.GetCenterVertex(graph_state.E, graph_state.V)
+			if middle_vertex.color == player:
+				return middle_vertex
+		else:
+			return None
+
 	# `graph` is an instance of a Graph, `player` is an integer (0 or 1).
 	# Should return a vertex `v` from graph.V where v.color == player
 	def ChooseVertexToRemove(graph, player):
 		# When down to the last four total vertices — look ahead
-		if len(graph.V) <= 4 and len(graph.V) > 1:
+		if len(graph.V) == 4: #len>1
+			print("got here 1")
 			future_states = PercolationPlayer.getFutureStates(graph, player)
-			print("future states", future_states)
 			for vertex, graph_state in future_states.items():
-				# check if graph_state represents a winning state (need to determine center vertex)
-				middle_vertex =  PercolationPlayer.GetCenterVertex(graph.E, graph.V)
-				if middle_vertex.color == player:
-					print("middle vertex", middle_vertex)
-					return middle_vertex
+				# losing states for 3 or less vertices: two vertices that are different colors/their colors
+				# winning: connected triangle (because we would go second)
+				# triangle with us as center vertex
+				isWinningState = PercolationPlayer.CheckIfWin4(graph_state, player)
+				if isWinningState:
+					print("GOT HERE")
+					return vertex
 
 			# if there aren’t any winners then pick randomly
 			for v in graph.V:
 				if v.color == player:
-					print("random pick", v)
+					print("random pick 1", v)
 					return v
-		
-		# If not down to last four vertices, proceed as usual
-		#min_num_triangles = 1000
-		#chosen_vertex = Vertex(3)
-		#for vertex in graph.V:
-			#if vertex.color == player:
-				#num_triangles = PercolationPlayer.getNumTriangles(graph, vertex)
-				#print("num triangles", num_triangles)
-				#print("vertex for triangles", vertex)
-				#print()
 
-				#if num_triangles < min_num_triangles:
-					#min_num_triangles = num_triangles
-					#chosen_vertex = vertex
-		for v_chosen in graph.V:
-			if v_chosen.color == player:
-				print(v_chosen)
-				return v_chosen
-		#print("chosen vertex", vertex)
-		#return vertex
+		elif len(graph.V) == 3:
+			print("got here 2")
+			# if triangle is open and we are in middle then pick middle vertex
+			winning_vertex = PercolationPlayer.CheckIfWin3(graph, player)
+			if winning_vertex != None:
+				print("GOT HERE IMPORTANT")
+				return winning_vertex
+			else:
+				# if there aren’t any winners (ie closed triangle or we aren't middle vertex) then pick randomly
+				for v in graph.V:
+					if v.color == player:
+						print("random pick 2", v)
+						return v
+
+		elif len(graph.V) == 1: # MORE EFFICIENT WAY TO TO DO THIS?
+			print("got here 3")
+			for v in graph.V:
+					if v.color == player:
+						print("random pick 3", v)
+						return v
+		
+		#print("GOT HERE NOT GOOD")
+		# If not down to last four vertices, proceed as usual
+		min_num_triangles = 1000
+		chosen_vertex = Vertex(3) #placeholder
+		for vertex in graph.V:
+			if vertex.color == player:
+				num_triangles = PercolationPlayer.getNumTriangles(graph, vertex)
+				
+
+				if num_triangles < min_num_triangles:
+					min_num_triangles = num_triangles
+					chosen_vertex = vertex
+
+		return vertex
 
 	
 	# Feel free to put any personal driver code here.
@@ -265,7 +307,7 @@ class TimeoutError(Exception):
     pass
 
 class Timeout:
-    def __init__(self, seconds=60, error_message="Timeout of {0} seconds hit"):
+    def __init__(self, seconds=0.5, error_message="Timeout of {0} seconds hit"):
         self.seconds = seconds
         self.error_message = error_message.format(seconds)
     def handle_timeout(self, signum, frame):

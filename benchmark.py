@@ -63,8 +63,10 @@ def PlayGraph(s, t, graph):
         try:
             original_vertex = GetVertex(graph, chosen_vertex.index)
             if not original_vertex:
+                print("attempted to color nonexistant vertex")
                 return 1 - active_player
             if original_vertex.color != -1:
+                print("attemptd to color enemies vertex")
                 return 1 - active_player
             # If output is reasonable, color this vertex.
             original_vertex.color = active_player
@@ -99,8 +101,10 @@ def PlayGraph(s, t, graph):
         try:
             original_vertex = GetVertex(graph, chosen_vertex.index)
             if not original_vertex:
+                print("attempted to remove nonexistant vertex")
                 return 1 - active_player
             if original_vertex.color != active_player:
+                print("attempted to remove enemy vertex")
                 return 1 - active_player
             # If output is reasonable, remove ("percolate") this vertex + edges attached to it, as well as isolated vertices.
             Percolate(graph, original_vertex)
