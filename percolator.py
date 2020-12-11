@@ -116,8 +116,26 @@ class PercolationPlayer:
 				for v in send_in_vertices:
 					if v.color == vertex.color and v.index == vertex.index: #should be the same
 						vertex_send_in = v
+				
 				new_graph = PercolationPlayer.RemoveVertex(graph_copy, vertex_send_in)
 				new_graph_states[vertex] = new_graph
+		
+		return new_graph_states
+
+	def getFutureStatesOtherPlayer(graph, player):
+		all_vertices = graph.V
+		new_graph_states = []
+		for vertex in all_vertices:
+			if vertex.color != player:
+				graph_copy = copy.deepcopy(graph)
+				send_in_vertices = graph_copy.V
+				vertex_send_in = Vertex(3) #placeholder
+				for v in send_in_vertices:
+					if v.color == vertex.color and v.index == vertex.index: #should be the same
+						vertex_send_in = v
+				
+				new_graph = PercolationPlayer.RemoveVertex(graph_copy, vertex_send_in)
+				new_graph_states.append(new_graph)
 		
 		return new_graph_states
 
@@ -136,19 +154,16 @@ class PercolationPlayer:
 			if edge.a != v and edge.b != v: # change to !
 				new_edges_list.append(edge)
 
+		graph.E = set(new_edges_list)
+
+
 		vertices_still_in_graph = set()
 		for edge in graph.E:
 			vertices_still_in_graph.add(edge.a)
 			vertices_still_in_graph.add(edge.b)
 
-		valid_vertex_set = set()
-		for vertex in vertices_set:
-			if vertex in vertices_still_in_graph:
-				valid_vertex_set.add(vertex)
+		graph.V = vertices_still_in_graph
 
-		graph.V = valid_vertex_set
-
-		graph.E = set(new_edges_list)
 
 		return graph
 
@@ -191,19 +206,36 @@ class PercolationPlayer:
 			return vertex
 
 	def CheckIfWin4(graph_state, player):
-		print(len(graph_state.E))
-		print(len(graph_state.V))
-		print()
+		#print(len(graph_state.E))
+		#print(len(graph_state.V))
+		#print()
 		if len(graph_state.E) == 3: # a fully connected trianlge = we win since going second
 			return True
-		elif len(graph_state.E) == 2:
+		elif len(graph_state.E) == 2 and len(graph_state.V) == 3:
+			print(graph_state)
 			middle_vertex = PercolationPlayer.GetCenterVertex(graph_state.E, graph_state.V)
 			if middle_vertex.color == player:
 				return True
 			else:
 				return False
+		elif len(graph_state.E) == 2: #four vertices
+			colorPlayer = 0
+			colorOther = 0
+
+			for vertex in graph_state.V:
+				if vertex.color == player:
+					colorPlayer += 1
+				else:
+					colorOther += 1
+
+			if len(colorPlayer) == 4 or len(colorPlayer) == 3:
+				return True
+			elif len(colorPlayer) == 0 or len(colorPlayer) == 1 or len(colorPlayer) == 2:
+				return False
+
 		else:
 			# need to check if single edge with both our color?
+			# two sets of connected dots (call check if I win 3?)
 			return False
 
 	def CheckIfWin3(graph_state, player):
@@ -214,11 +246,90 @@ class PercolationPlayer:
 		else:
 			return None
 
+	def SpecialCase(graph, player):
+		pass
+		# need to call future states where test if remove each thing and see if results in winning state
+
 	# `graph` is an instance of a Graph, `player` is an integer (0 or 1).
 	# Should return a vertex `v` from graph.V where v.color == player
 	def ChooseVertexToRemove(graph, player):
+		#print(graph)
+		"""
+		if len(graph.V) == 5:
+			win_count = 0
+			highest_win_percentage = 0
+			high_prob_vertex = Vertex("3") #placeholder
+
+
+			# get future states where WE removed a vertex
+			future_states = PercolationPlayer.getFutureStates(graph, player)
+
+			for vertex, state in future_states.items():
+				future_future_states = PercolationPlayer.getFutureStatesOtherPlayer(graph, player)
+
+				for state in future_future_states:
+					print(state)
+					if PercolationPlayer.CheckIfWin4(state, player): #check if method works well
+						win_count += 1
+					#elif PercolationPlayer.CheckIfWin4(state, player) == None: # special case
+
+
+				win_percentage = win_count/(len(future_future_states)) #this is how you get len of dictionary?
+
+				if win_percentage == 1:
+					return vertex
+				elif win_percentage > highest_win_percentage:
+					highest_win_percentage = win_percentage
+					high_prob_vertex = vertex
+
+			return high_prob_vertex
+			"""
+
+			# now for each of those states get future states where OTHER PLAYER chooses a vertex
+
+			# take those future future states and check which ones represent wins (check if I win four function)
+		if len(graph.V) == 5:
+			future_states = PercolationPlayer.getFutureStates(graph, player)
+	
+			highest_win_probability = 0
+			highest_vertex = Vertex(3)
+	
+			for vertex, state in future_states.items():
+				win_count = 0
+				win_probability = 0
+				future_future_states = PercolationPlayer.getFutureStatesOtherPlayer(state, player)
+				for future_future_state in future_future_states:
+					if len(future_future_state.V) == 3:
+						edges = future_future_state.E
+						vertices = future_future_state.V
+						middle_vertex = PercolationPlayer.GetCenterVertex(edges, vertices)
+						
+						if len(edges) == 2 and middle_vertex.color == player:
+							win_count += 1
+					if len(future_future_state.V) == 2:
+						colorOther = 0
+						for vertex in future_future_state.V:
+							if vertex.color != player:
+								colorOther += 1
+						if colorOther != 2:
+							win_count += 1
+
+				if len(future_future_states) != 0:
+					win_probability = win_count/len(future_future_states)
+				else:
+					win_probability = 0
+				
+				if win_probability == 1:
+					return vertex
+				elif win_probability > highest_win_probability:
+					highest_win_probability = win_probability
+					highest_vertex = vertex
+	
+			return highest_vertex
+
+
 		# When down to the last four total vertices — look ahead
-		if len(graph.V) == 4: #len>1
+		elif len(graph.V) == 4: #len>1
 			future_states = PercolationPlayer.getFutureStates(graph, player)
 			for vertex, graph_state in future_states.items():
 				# losing states for 3 or less vertices: two vertices that are different colors/their colors
