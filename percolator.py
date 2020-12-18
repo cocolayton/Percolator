@@ -212,7 +212,7 @@ class PercolationPlayer:
 		if len(graph_state.E) == 3: # a fully connected trianlge = we win since going second
 			return True
 		elif len(graph_state.E) == 2 and len(graph_state.V) == 3:
-			print(graph_state)
+			#print(graph_state)
 			middle_vertex = PercolationPlayer.GetCenterVertex(graph_state.E, graph_state.V)
 			if middle_vertex.color == player:
 				return True
@@ -234,9 +234,10 @@ class PercolationPlayer:
 				return False
 
 		else:
+			#SIGNLE EDGES AND NO EDGES
 			# need to check if single edge with both our color?
 			# two sets of connected dots (call check if I win 3?)
-			return False
+			return True
 
 	def CheckIfWin3(graph_state, player):
 		if len(graph_state.E) == 2:
@@ -253,45 +254,11 @@ class PercolationPlayer:
 	# `graph` is an instance of a Graph, `player` is an integer (0 or 1).
 	# Should return a vertex `v` from graph.V where v.color == player
 	def ChooseVertexToRemove(graph, player):
-		#print(graph)
-		"""
-		if len(graph.V) == 5:
-			win_count = 0
-			highest_win_percentage = 0
-			high_prob_vertex = Vertex("3") #placeholder
-
-
-			# get future states where WE removed a vertex
-			future_states = PercolationPlayer.getFutureStates(graph, player)
-
-			for vertex, state in future_states.items():
-				future_future_states = PercolationPlayer.getFutureStatesOtherPlayer(graph, player)
-
-				for state in future_future_states:
-					print(state)
-					if PercolationPlayer.CheckIfWin4(state, player): #check if method works well
-						win_count += 1
-					#elif PercolationPlayer.CheckIfWin4(state, player) == None: # special case
-
-
-				win_percentage = win_count/(len(future_future_states)) #this is how you get len of dictionary?
-
-				if win_percentage == 1:
-					return vertex
-				elif win_percentage > highest_win_percentage:
-					highest_win_percentage = win_percentage
-					high_prob_vertex = vertex
-
-			return high_prob_vertex
-			"""
-
-			# now for each of those states get future states where OTHER PLAYER chooses a vertex
-
-			# take those future future states and check which ones represent wins (check if I win four function)
+		print(graph)
 		if len(graph.V) == 5:
 			future_states = PercolationPlayer.getFutureStates(graph, player)
 	
-			highest_win_probability = 0
+			highest_win_probability = -1
 			highest_vertex = Vertex(3)
 	
 			for vertex, state in future_states.items():
@@ -306,6 +273,7 @@ class PercolationPlayer:
 						
 						if len(edges) == 2 and middle_vertex.color == player:
 							win_count += 1
+
 					if len(future_future_state.V) == 2:
 						colorOther = 0
 						for vertex in future_future_state.V:
@@ -314,17 +282,23 @@ class PercolationPlayer:
 						if colorOther != 2:
 							win_count += 1
 
+				print("win count", win_count)
+				print("denom", len(future_future_states))
+
 				if len(future_future_states) != 0:
 					win_probability = win_count/len(future_future_states)
 				else:
 					win_probability = 0
 				
 				if win_probability == 1:
+					print("n=5  prob = 1", vertex)
 					return vertex
 				elif win_probability > highest_win_probability:
 					highest_win_probability = win_probability
 					highest_vertex = vertex
-	
+					print("highest", highest_vertex)
+			
+			print("n=5", highest_vertex)
 			return highest_vertex
 
 
@@ -337,32 +311,28 @@ class PercolationPlayer:
 				# triangle with us as center vertex
 				isWinningState = PercolationPlayer.CheckIfWin4(graph_state, player)
 				if isWinningState:
-					#print("GOT HERE")
+					print("n=4", vertex)
 					return vertex
 
 			# if there aren’t any winners then pick randomly
 			for v in graph.V:
 				if v.color == player:
 					#print("random pick 1", v)
+					print("n=4 random", v)
 					return v
 
 		elif len(graph.V) == 3:
 			# if triangle is open and we are in middle then pick middle vertex
 			winning_vertex = PercolationPlayer.CheckIfWin3(graph, player)
 			if winning_vertex != None:
-				#print("GOT HERE IMPORTANT")
+				
+				print("n=3", winning_vertex)
 				return winning_vertex
 			else:
 				# if there aren’t any winners (ie closed triangle or we aren't middle vertex) then pick randomly
 				for v in graph.V:
 					if v.color == player:
-						#print("random pick 2", v)
-						return v
-
-		elif len(graph.V) == 1: # MORE EFFICIENT WAY TO TO DO THIS?
-			for v in graph.V:
-					if v.color == player:
-						#print("random pick 3", v)
+						print("n=3 random", v)
 						return v
 		else:
 			# If not down to last four vertices, proceed as usual
@@ -375,7 +345,19 @@ class PercolationPlayer:
 					if num_triangles < min_num_triangles:
 						min_num_triangles = num_triangles
 						chosen_vertex = vertex
+
+			print("n>5", chosen_vertex)
 			return chosen_vertex
+
+
+			"""
+		elif len(graph.V) == 1: # MORE EFFICIENT WAY TO TO DO THIS?
+			for v in graph.V:
+					if v.color == player:
+						print("n=1", v)
+						#print("random pick 3", v)
+						return v
+		"""
 
 	
 	# Feel free to put any personal driver code here.
@@ -516,9 +498,11 @@ def PlayGraph(s, t, graph):
         try:
             original_vertex = GetVertex(graph, chosen_vertex.index)
             if not original_vertex:
-                return 1 - active_player
+            	print("BAD")
+            	return 1 - active_player
             if original_vertex.color != active_player:
-                return 1 - active_player
+            	print("BAD")
+            	return 1 - active_player
             # If output is reasonable, remove ("percolate") this vertex + edges attached to it, as well as isolated vertices.
             Percolate(graph, original_vertex)
         # Only case when this should fire is if chosen_vertex.index does not exist or similar error.
@@ -535,7 +519,7 @@ def PlayGraph(s, t, graph):
 # This method generates a binomial random graph with 2k vertices
 # having probability p of an edge between each pair of vertices.
 def BinomialRandomGraph(k, p):
-    v = {Vertex(i) for i in range(2 * k)}
+    v = {Vertex(i) for i in range(2 * k)} # 2*k
     e = {Edge(a, b) for (a, b) in itertools.combinations(v, 2) if random.random() < p}
     return Graph(v, e)
 
@@ -543,7 +527,7 @@ def BinomialRandomGraph(k, p):
 # This method creates and plays a number of random graphs using both passed in players.
 def PlayBenchmark(p1, p2, iters):
     graphs = (
-        BinomialRandomGraph(random.randint(1, 20), random.random())
+        BinomialRandomGraph(random.randint(1, 20), random.random()) #20 
         for _ in range(iters)
     )
     wins = [0, 0]
@@ -552,7 +536,6 @@ def PlayBenchmark(p1, p2, iters):
         g2 = copy.deepcopy(graph)
         # Each player gets a chance to go first on each graph.
         winner_a = PlayGraph(p1, p2, g1)
-        wins[winner_a] += 1
         winner_b = PlayGraph(p2, p1, g2)
         wins[1-winner_b] += 1
     return wins
@@ -567,7 +550,9 @@ class RandomPlayer:
         return random.choice([v for v in graph.V if v.color == -1])
 
     def ChooseVertexToRemove(graph, active_player):
-        return random.choice([v for v in graph.V if v.color == active_player])
+    	print("other player choice")
+    	print(random.choice([v for v in graph.V if v.color == active_player]))
+    	return random.choice([v for v in graph.V if v.color == active_player])
 
 
 if __name__ == "__main__":
@@ -579,7 +564,7 @@ if __name__ == "__main__":
     # from percolator import PercolationPlayer
     # p1 = PercolationPlayer
     p2 = PercolationPlayer
-    iters = 200
+    iters = 1000
     wins = PlayBenchmark(p1, p2, iters)
     print(wins)
     print(
@@ -587,4 +572,3 @@ if __name__ == "__main__":
             1.0 * wins[0] / sum(wins), 1.0 * wins[1] / sum(wins)
         )
     )
-
