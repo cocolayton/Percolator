@@ -1,4 +1,3 @@
-
 import copy
 # we need to implement a time function to check that our code will work on Matt’s computer
 class PercolationPlayer:
@@ -41,10 +40,8 @@ class PercolationPlayer:
 			
 		color1_count = 0
 		color2_count = 1
-
 		vertex1 = Vertex(3) # placeholders
 		vertex2 = Vertex(3)
-
 		for vertex in vertices:
 			if vertex.color == 0:
 				color1_count +=1
@@ -376,7 +373,7 @@ class PercolationPlayer:
 
 
 		# When down to the last four total vertices — look ahead
-		elif len(graph.V) == 4: #len>1
+		if len(graph.V) == 4: #len>1
 			future_states = PercolationPlayer.getFutureStates(graph, player)
 			for vertex, graph_state in future_states.items():
 				# losing states for 3 or less vertices: two vertices that are different colors/their colors
@@ -394,7 +391,7 @@ class PercolationPlayer:
 					#print("n=4 random", v)
 					return v
 
-		elif len(graph.V) == 3:
+		if len(graph.V) == 3:
 			# if triangle is open and we are in middle then pick middle vertex
 			winning_vertex = PercolationPlayer.CheckIfWin3(graph, player)
 			if winning_vertex != None:
