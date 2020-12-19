@@ -1,7 +1,8 @@
 import copy
-# we need to implement a time function to check that our code will work on Matt’s computer
+from random import *
+
+count = 0
 class PercolationPlayer:
-	global pick_big
 
 	# this function is used to determine how many possible triangles there are associated with
 	# a each uncolored vertex in the graph
@@ -165,13 +166,13 @@ class PercolationPlayer:
 		return graph
 
 
+
 	# `graph` is an instance of a Graph, `player` is an integer (0 or 1).
 	# Should return a vertex `v` from graph.V where v.color == -1
 	#@staticmethod
 	def ChooseVertexToColor(graph, player):
-		global pick_big
-		pick_big = True
-		if pick_big == True:
+		global count
+		if count % 3 != 0:
 			list_vertices = graph.V
 			potential_vertices = []
 			for vertex in list_vertices:
@@ -184,7 +185,7 @@ class PercolationPlayer:
 				if value > biggest_num_vertices:
 					biggest_num_vertices = value
 					vertex = key
-			pick_big = False
+			count += 1
 			return vertex
 		else:
 			list_vertices = graph.V
@@ -195,18 +196,18 @@ class PercolationPlayer:
 			v_dict = PercolationPlayer.GetNumVerticesAttached(potential_vertices, graph)
 			smallest_num_vertices = len(graph.V)
 			vertex = Vertex(3)
-			for key, value in v_dict:
+			for key, value in v_dict.items():
 				if value < smallest_num_vertices:
 					smallest_num_vertices = value
 					vertex = key
-			pick_big = True
+			count += 1
 			return vertex
 
 	def CheckIfWin4(graph_state, player):
 		#print(len(graph_state.E))
 		#print(len(graph_state.V))
 		#print()
-		if len(graph_state.E) == 3: # a fully connected trianlge = we win since going second
+		if len(graph_state.E) == 3 and len(graph_state.V) == 3: # a fully connected trianlge = we win since going second
 			return True
 		elif len(graph_state.E) == 2 and len(graph_state.V) == 3:
 			#print(graph_state)
@@ -215,7 +216,7 @@ class PercolationPlayer:
 				return True
 			else:
 				return False
-		elif len(graph_state.E) == 2: #four vertices
+		elif len(graph_state.E) == 2 and len(graph_state.V) == 4: #four vertices
 			colorPlayer = 0
 			colorOther = 0
 
@@ -231,10 +232,15 @@ class PercolationPlayer:
 				return False
 
 		else:
-			#SIGNLE EDGES AND NO EDGES
-			# need to check if single edge with both our color?
-			# two sets of connected dots (call check if I win 3?)
-			return True
+			color_count = 0
+			for vertex in graph_state.V:
+				if vertex.color == player:
+					color_count += 1
+
+			if color_count > 0:
+				return True
+			else:
+				return False
 
 	def CheckIfWin3(graph_state, player):
 		if len(graph_state.E) == 2:
@@ -251,7 +257,6 @@ class PercolationPlayer:
 	# `graph` is an instance of a Graph, `player` is an integer (0 or 1).
 	# Should return a vertex `v` from graph.V where v.color == player
 	def ChooseVertexToRemove(graph, player):
-		#print(graph)
 		if len(graph.V) == 6:
 			future_states = PercolationPlayer.getFutureStates(graph, player)
 	
@@ -307,7 +312,6 @@ class PercolationPlayer:
 				if win_probability == 1:
 					##print("n=6  prob = 1", vertex)
 					#print("player", player)
-					#print("vertex", vertex)
 					return vertex
 				elif win_probability > highest_win_probability:
 					highest_win_probability = win_probability
@@ -316,7 +320,6 @@ class PercolationPlayer:
 			
 			#print("n=6", highest_vertex)
 			#print("player", player)
-			#print("vertex", highest_vertex)
 			return highest_vertex
 
 
@@ -368,7 +371,6 @@ class PercolationPlayer:
 			
 			#print("n=5", highest_vertex)
 			#print("player", player)
-			#print("vertex", highest_vertex)
 			return highest_vertex
 
 
@@ -381,14 +383,13 @@ class PercolationPlayer:
 				# triangle with us as center vertex
 				isWinningState = PercolationPlayer.CheckIfWin4(graph_state, player)
 				if isWinningState:
-					#print("n=4", vertex)
+					#print("vertex", vertex)
 					return vertex
 
 			# if there aren’t any winners then pick randomly
 			for v in graph.V:
 				if v.color == player:
 					#print("random pick 1", v)
-					#print("n=4 random", v)
 					return v
 
 		if len(graph.V) == 3:
@@ -396,13 +397,11 @@ class PercolationPlayer:
 			winning_vertex = PercolationPlayer.CheckIfWin3(graph, player)
 			if winning_vertex != None:
 				
-				#print("n=3", winning_vertex)
 				return winning_vertex
 			else:
 				# if there aren’t any winners (ie closed triangle or we aren't middle vertex) then pick randomly
 				for v in graph.V:
 					if v.color == player:
-						#print("n=3 random", v)
 						return v
 		else:
 			# If not down to last four vertices, proceed as usual
@@ -415,8 +414,6 @@ class PercolationPlayer:
 					if num_triangles < min_num_triangles:
 						min_num_triangles = num_triangles
 						chosen_vertex = vertex
-
-			#print("n>6", chosen_vertex)
 			return chosen_vertex
 
 
