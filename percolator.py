@@ -1,5 +1,4 @@
 import copy
-from random import *
 
 # variable used later when chosing which vertices to color
 count = 0
