@@ -122,11 +122,11 @@ class PercolationPlayer:
 		
 		return new_graph_states
 
-	def getFutureStatesOtherPlayer(graph, player):
+	def getFutureFutureStates(graph, color):
 		all_vertices = graph.V
 		new_graph_states = []
 		for vertex in all_vertices:
-			if vertex.color != player:
+			if vertex.color == color: # !=
 				graph_copy = copy.deepcopy(graph)
 				send_in_vertices = graph_copy.V
 				vertex_send_in = Vertex(3) #placeholder
@@ -254,8 +254,8 @@ class PercolationPlayer:
 	# `graph` is an instance of a Graph, `player` is an integer (0 or 1).
 	# Should return a vertex `v` from graph.V where v.color == player
 	def ChooseVertexToRemove(graph, player):
-		print(graph)
-		if len(graph.V) == 5:
+		#print(graph)
+		if len(graph.V) == 6:
 			future_states = PercolationPlayer.getFutureStates(graph, player)
 	
 			highest_win_probability = -1
@@ -264,7 +264,76 @@ class PercolationPlayer:
 			for vertex, state in future_states.items():
 				win_count = 0
 				win_probability = 0
-				future_future_states = PercolationPlayer.getFutureStatesOtherPlayer(state, player)
+				denominator = 0
+				future_future_states = PercolationPlayer.getFutureFutureStates(state, 1-player)
+		
+				for future_future_state in future_future_states:
+					future_future_future_states = PercolationPlayer.getFutureFutureStates(state, player) # adapt function so not just other player
+					denominator = denominator + len(future_future_future_states)
+					
+					for future_future_future_state in future_future_future_states:
+						vertices_future_future_future_state = future_future_future_state.V
+						is_player_color_in_graph = 0
+						
+						for v in vertices_future_future_future_state:
+							if v.color == player:
+								is_player_color_in_graph += 1
+
+						if is_player_color_in_graph > 0 and len(future_future_future_state.V) == 3 and len(future_future_future_state.E) == 3: # this is a connected triangle CHECK FOR COLORS OF OTHER PLAYER
+							win_count += 1
+						
+						if len(future_future_future_state.V) == 3:
+							edges = future_future_future_state.E
+							vertices = future_future_future_state.V
+							middle_vertex = PercolationPlayer.GetCenterVertex(edges, vertices)
+						
+							if len(edges) == 2 and middle_vertex.color == player:
+								win_count += 1
+
+						if len(future_future_future_state.V) == 2:
+							colorOther = 0
+							for v in future_future_future_state.V:
+								if v.color != player:
+									colorOther += 1
+							
+							if colorOther != 2:
+								win_count += 1
+		
+				#print("win count", win_count)
+				#print("denom", len(future_future_states))
+
+				if denominator != 0:
+					win_probability = win_count/denominator
+				else:
+					win_probability = 0 #double check this (what if no future future future states)
+				
+				if win_probability == 1:
+					##print("n=6  prob = 1", vertex)
+					#print("player", player)
+					#print("vertex", vertex)
+					return vertex
+				elif win_probability > highest_win_probability:
+					highest_win_probability = win_probability
+					highest_vertex = vertex
+					#print("highest", highest_vertex)
+			
+			#print("n=6", highest_vertex)
+			#print("player", player)
+			#print("vertex", highest_vertex)
+			return highest_vertex
+
+
+		if len(graph.V) == 5:
+			#print("N=5")
+			future_states = PercolationPlayer.getFutureStates(graph, player)
+	
+			highest_win_probability = -1
+			highest_vertex = Vertex(3)
+	
+			for vertex, state in future_states.items():
+				win_count = 0
+				win_probability = 0
+				future_future_states = PercolationPlayer.getFutureFutureStates(state, 1-player)
 				for future_future_state in future_future_states:
 					if len(future_future_state.V) == 3:
 						edges = future_future_state.E
@@ -276,14 +345,14 @@ class PercolationPlayer:
 
 					if len(future_future_state.V) == 2:
 						colorOther = 0
-						for vertex in future_future_state.V:
-							if vertex.color != player:
+						for v in future_future_state.V:
+							if v.color != player:
 								colorOther += 1
 						if colorOther != 2:
 							win_count += 1
 
-				print("win count", win_count)
-				print("denom", len(future_future_states))
+				#print("win count", win_count)
+				#print("denom", len(future_future_states))
 
 				if len(future_future_states) != 0:
 					win_probability = win_count/len(future_future_states)
@@ -291,14 +360,18 @@ class PercolationPlayer:
 					win_probability = 0
 				
 				if win_probability == 1:
-					print("n=5  prob = 1", vertex)
+					#print("player", player)
+					#print("vertex", vertex)
+					#print("n=5  prob = 1", vertex)
 					return vertex
 				elif win_probability > highest_win_probability:
 					highest_win_probability = win_probability
 					highest_vertex = vertex
-					print("highest", highest_vertex)
+					#print("highest", highest_vertex)
 			
-			print("n=5", highest_vertex)
+			#print("n=5", highest_vertex)
+			#print("player", player)
+			#print("vertex", highest_vertex)
 			return highest_vertex
 
 
@@ -311,14 +384,14 @@ class PercolationPlayer:
 				# triangle with us as center vertex
 				isWinningState = PercolationPlayer.CheckIfWin4(graph_state, player)
 				if isWinningState:
-					print("n=4", vertex)
+					#print("n=4", vertex)
 					return vertex
 
 			# if there aren’t any winners then pick randomly
 			for v in graph.V:
 				if v.color == player:
 					#print("random pick 1", v)
-					print("n=4 random", v)
+					#print("n=4 random", v)
 					return v
 
 		elif len(graph.V) == 3:
@@ -326,13 +399,13 @@ class PercolationPlayer:
 			winning_vertex = PercolationPlayer.CheckIfWin3(graph, player)
 			if winning_vertex != None:
 				
-				print("n=3", winning_vertex)
+				#print("n=3", winning_vertex)
 				return winning_vertex
 			else:
 				# if there aren’t any winners (ie closed triangle or we aren't middle vertex) then pick randomly
 				for v in graph.V:
 					if v.color == player:
-						print("n=3 random", v)
+						#print("n=3 random", v)
 						return v
 		else:
 			# If not down to last four vertices, proceed as usual
@@ -340,13 +413,13 @@ class PercolationPlayer:
 			chosen_vertex = Vertex(3) #placeholder
 			for vertex in graph.V:
 				if vertex.color == player:
-					num_triangles = PercolationPlayer.getNumTriangles(graph, vertex) #THIS IS FUCKED UP (getting none type sometimes???)
+					num_triangles = PercolationPlayer.getNumTriangles(graph, vertex)
 
 					if num_triangles < min_num_triangles:
 						min_num_triangles = num_triangles
 						chosen_vertex = vertex
 
-			print("n>5", chosen_vertex)
+			#print("n>6", chosen_vertex)
 			return chosen_vertex
 
 
@@ -498,10 +571,10 @@ def PlayGraph(s, t, graph):
         try:
             original_vertex = GetVertex(graph, chosen_vertex.index)
             if not original_vertex:
-            	print("BAD")
+            	print("BAD 1")
             	return 1 - active_player
             if original_vertex.color != active_player:
-            	print("BAD")
+            	print("BAD 2")
             	return 1 - active_player
             # If output is reasonable, remove ("percolate") this vertex + edges attached to it, as well as isolated vertices.
             Percolate(graph, original_vertex)
@@ -550,8 +623,8 @@ class RandomPlayer:
         return random.choice([v for v in graph.V if v.color == -1])
 
     def ChooseVertexToRemove(graph, active_player):
-    	print("other player choice")
-    	print(random.choice([v for v in graph.V if v.color == active_player]))
+    	#print("other player choice")
+    	#print(random.choice([v for v in graph.V if v.color == active_player]))
     	return random.choice([v for v in graph.V if v.color == active_player])
 
 
@@ -564,7 +637,7 @@ if __name__ == "__main__":
     # from percolator import PercolationPlayer
     # p1 = PercolationPlayer
     p2 = PercolationPlayer
-    iters = 1000
+    iters = 200
     wins = PlayBenchmark(p1, p2, iters)
     print(wins)
     print(
