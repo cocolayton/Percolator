@@ -53,7 +53,7 @@ class PercolationPlayer:
 	# computes the number of triangles associated with a given vertex
 	# a triangle is defined as having the given vertex in the middle have two vertices on either side
 	# of that vertex where at least one is of the opposing player's color
-	def getNumTriangles(graph, vertex):
+	def GetNumTriangles(graph, vertex):
 		# get neighbors of the vertex
 		allNeighbors = PercolationPlayer.Neighbors(graph, vertex)
 
@@ -78,7 +78,7 @@ class PercolationPlayer:
 
 	# this function returns a dictionary of all possible future states (given an intial graph).
 	# The keys are the vertices that were removed to achieve each state and the states are the values.
-	def getFutureStates(graph, player):
+	def GetFutureStates(graph, player):
 		all_vertices = graph.V
 		new_graph_states = {}
 		for vertex in all_vertices:
@@ -101,7 +101,7 @@ class PercolationPlayer:
 	# this function returns a list of all possible future states given an intial graph and the color
 	# of the player that is to remove a vertex. This function is used when we don't want a dictionary
 	# that includes the vertices removed like above.
-	def getFutureFutureStates(graph, color):
+	def GetFutureFutureStates(graph, color):
 		all_vertices = graph.V
 		new_graph_states = []
 		for vertex in all_vertices:
@@ -146,7 +146,6 @@ class PercolationPlayer:
 
 		return graph
 
-
 	# `graph` is an instance of a Graph, `player` is an integer (0 or 1).
 	# Should return a vertex `v` from graph.V where v.color == -1
 	def ChooseVertexToColor(graph, player):
@@ -185,7 +184,7 @@ class PercolationPlayer:
 			
 			# return the vertex with min triangles
 			smallest_num_vertices = len(graph.V)
-			vertex = Vertex(3)
+			vertex = Vertex(3) #placeholder
 			for potential_vertex, num_triangles_possible in v_dict.items():
 				if num_triangles_possible < smallest_num_vertices:
 					smallest_num_vertices = num_triangles_possible
@@ -207,8 +206,8 @@ class PercolationPlayer:
 				return True
 			else:
 				return False
-		# two separate pairs of vertices -- we win if we are 3 or 4 of the vertices
-		elif len(graph_state.E) == 2 and len(graph_state.V) == 4: #four vertices
+		# two separate pairs of vertices -- we win if we have 3 or 4 of the vertices
+		elif len(graph_state.E) == 2 and len(graph_state.V) == 4:
 			colorPlayer = 0 # keeping track of how many vertices belong to us
 
 			for vertex in graph_state.V:
@@ -245,138 +244,171 @@ class PercolationPlayer:
 		else:
 			return None
 
+	# determines if the given future future graph state is a winning state (and started with six vertices in the graph)
+	# and returns the win count (aka 1 or 0)
+	def GetWinCountSixVertices(graph_state, player):
+		vertex_list = graph_state.V
+		edge_list = graph_state.E
+		is_player_color_in_graph = 0
+		wins = 0
+						
+		# make sure our color is still in the graph
+		for v in vertex_list:
+			if v.color == player:
+				is_player_color_in_graph += 1
+
+		# fully connected triangle = win for us
+		if is_player_color_in_graph > 0 and len(vertex_list) == 3 and len(edge_list) == 3:
+			wins += 1
+						
+		# straight line/open triangle -- if we are the middle vertex then we win
+		elif len(vertex_list) == 3:
+			middle_vertex = PercolationPlayer.GetCenterVertex(edge_list, vertex_list)
+						
+			if len(edge_list) == 2 and middle_vertex.color == player:
+				wins += 1
+
+		# if only two vertices we need to have at least one of those two
+		elif len(vertex_list) == 2:
+			colorOther = 0
+			for v in vertex_list:
+				if v.color != player:
+					colorOther += 1
+							
+			if colorOther != 2:
+				wins += 1
+
+		return wins
+
+
+	# function to determine the most optimal vertex to pick if there are 6 vertices left in the graph
+	def SixVerticesLeft(graph, player):
+		future_states = PercolationPlayer.GetFutureStates(graph, player)
+	
+		highest_win_probability = -1
+		highest_vertex = Vertex(3) #placeholder
+	
+		for vertex, state in future_states.items():
+			win_count = 0
+			win_probability = 0
+			denominator = 0 # used to calculate win probability
+
+			# get the next set of future states
+			future_future_states = PercolationPlayer.GetFutureFutureStates(state, 1-player)
+		
+			for future_future_state in future_future_states:
+				# then get the future states of those future states
+				future_future_future_states = PercolationPlayer.GetFutureFutureStates(state, player)
+				denominator = denominator + len(future_future_future_states) # keeping track of number of possible outcomes
+					
+				for future_future_future_state in future_future_future_states:
+					# check if this graph state is a winning state
+					wins = PercolationPlayer.GetWinCountSixVertices(future_future_future_state, player)
+					win_count += wins
+
+			if denominator != 0:
+				win_probability = win_count/denominator
+			else:
+				win_probability = 0
+				
+			if win_probability == 1:
+				return vertex # automatic win for us
+			elif win_probability > highest_win_probability:
+				highest_win_probability = win_probability
+				highest_vertex = vertex
+
+		return highest_vertex
+
+
+	# determines if the given future future graph state is a winning state (and started with five vertices in the graph)
+	# and returns the win count (aka 1 or 0)
+	def GetWinCountFiveVertices(graph_state, player):
+		edge_list = graph_state.E
+		vertex_list = graph_state.V
+		wins = 0
+
+		# check if open triangle/straightline
+		if len(vertex_list) == 3:
+			middle_vertex = PercolationPlayer.GetCenterVertex(edge_list, vertex_list)
+			
+			# if open triangle and we are the middle vertex = win for us
+			if len(edge_list) == 2 and middle_vertex.color == player:
+				wins += 1
+
+		# if only two vertices we need to have at least one of those two
+		elif len(vertex_list) == 2:
+			colorOther = 0
+			for v in vertex_list:
+				if v.color != player:
+					colorOther += 1
+			if colorOther != 2:
+				wins += 1
+
+		return wins
+
+	# function to determine the most optimal vertex to pick if there are 5 vertices left in the graph
+	def FiveVerticesLeft(graph, player):
+		future_states = PercolationPlayer.GetFutureStates(graph, player)
+	
+		highest_win_probability = -1
+		highest_vertex = Vertex(3)
+	
+		for vertex, state in future_states.items():
+			win_count = 0
+			win_probability = 0
+
+			# get the next set of future states
+			future_future_states = PercolationPlayer.GetFutureFutureStates(state, 1-player)
+
+			for future_future_state in future_future_states:
+				# check if the graph state is a winning state
+				wins = PercolationPlayer.GetWinCountFiveVertices(future_future_state, player)
+				win_count += wins
+
+			if len(future_future_states) != 0:
+				win_probability = win_count/len(future_future_states)
+			else:
+				win_probability = 0
+				
+			if win_probability == 1:
+				return vertex
+			elif win_probability > highest_win_probability:
+				highest_win_probability = win_probability
+				highest_vertex = vertex
+
+		return highest_vertex
+
+	# function to determine the most optimal vertex to pick if there are 4 vertices left in the graph
+	def FourVerticesLeft(graph, player):
+		# get future states
+		future_states = PercolationPlayer.GetFutureStates(graph, player)
+		for vertex, graph_state in future_states.items():
+			# check if the future state is a winning state or not
+			isWinningState = PercolationPlayer.CheckIfWin4(graph_state, player)
+				
+			if isWinningState:
+				return vertex
+
+		# if there aren’t any winners then pick randomly
+		for v in graph.V:
+			if v.color == player:
+				return v
+
 
 	# `graph` is an instance of a Graph, `player` is an integer (0 or 1).
 	# Should return a vertex `v` from graph.V where v.color == player
 	def ChooseVertexToRemove(graph, player):
 		# if six vertices in the graph, do a double look ahead to determine best vertex choice
 		if len(graph.V) == 6:
-			future_states = PercolationPlayer.getFutureStates(graph, player)
-	
-			highest_win_probability = -1
-			highest_vertex = Vertex(3)
-	
-			for vertex, state in future_states.items():
-				win_count = 0
-				win_probability = 0
-				denominator = 0 # used to calculate win probability
-
-				# get the next set of future states
-				future_future_states = PercolationPlayer.getFutureFutureStates(state, 1-player)
+			return PercolationPlayer.SixVerticesLeft(graph, player)
 		
-				for future_future_state in future_future_states:
-					# then get the future states of those future states
-					future_future_future_states = PercolationPlayer.getFutureFutureStates(state, player)
-					denominator = denominator + len(future_future_future_states) # keeping track of number of possible outcomes
-					
-					for future_future_future_state in future_future_future_states:
-						vertices_future_future_future_state = future_future_future_state.V
-						is_player_color_in_graph = 0
-						
-						# make sure our color is still in the graph
-						for v in vertices_future_future_future_state:
-							if v.color == player:
-								is_player_color_in_graph += 1
-
-						# fully connected triangle = win for us
-						if is_player_color_in_graph > 0 and len(future_future_future_state.V) == 3 and len(future_future_future_state.E) == 3:
-							win_count += 1
-						
-						# straight line/open triangle -- if we are the middle vertex then we win
-						elif len(future_future_future_state.V) == 3: #HEREEEEE
-							edges = future_future_future_state.E
-							vertices = future_future_future_state.V
-							middle_vertex = PercolationPlayer.GetCenterVertex(edges, vertices)
-						
-							if len(edges) == 2 and middle_vertex.color == player:
-								win_count += 1
-
-						# if only two vertices we need to have at least one of those two
-						elif len(future_future_future_state.V) == 2: #HEREEEEEE
-							colorOther = 0
-							for v in future_future_future_state.V:
-								if v.color != player:
-									colorOther += 1
-							
-							if colorOther != 2:
-								win_count += 1
-
-				if denominator != 0:
-					win_probability = win_count/denominator
-				else:
-					win_probability = 0
-				
-				if win_probability == 1:
-					return vertex # automatic win for us
-				elif win_probability > highest_win_probability:
-					highest_win_probability = win_probability
-					highest_vertex = vertex
-
-			return highest_vertex
-
 		# if there's 5 vertices in the graph
 		if len(graph.V) == 5:
-			future_states = PercolationPlayer.getFutureStates(graph, player)
-	
-			highest_win_probability = -1
-			highest_vertex = Vertex(3)
-	
-			for vertex, state in future_states.items():
-				win_count = 0
-				win_probability = 0
-
-				# get the next set of future states
-				future_future_states = PercolationPlayer.getFutureFutureStates(state, 1-player)
-
-				for future_future_state in future_future_states:
-					# the only way we win with 3 vertices still in the graph is if its an open
-					# triangle/straight line and we have the center vertex
-					if len(future_future_state.V) == 3:
-						edges = future_future_state.E
-						vertices = future_future_state.V
-						middle_vertex = PercolationPlayer.GetCenterVertex(edges, vertices)
-						
-						if len(edges) == 2 and middle_vertex.color == player:
-							win_count += 1
-
-					# if only two vertices we need to have at least one of those two
-					elif len(future_future_state.V) == 2: #HEREEEE
-						colorOther = 0
-						for v in future_future_state.V:
-							if v.color != player:
-								colorOther += 1
-						if colorOther != 2:
-							win_count += 1
-
-				if len(future_future_states) != 0:
-					win_probability = win_count/len(future_future_states)
-				else:
-					win_probability = 0
-				
-				if win_probability == 1:
-					return vertex
-				elif win_probability > highest_win_probability:
-					highest_win_probability = win_probability
-					highest_vertex = vertex
-
-			return highest_vertex
-
+			return PercolationPlayer.FiveVerticesLeft(graph, player)
 
 		# When there's four vertices in the graph
 		if len(graph.V) == 4:
-			# get future states
-			future_states = PercolationPlayer.getFutureStates(graph, player)
-			for vertex, graph_state in future_states.items():
-				# check if the future state is a winning state or not
-				isWinningState = PercolationPlayer.CheckIfWin4(graph_state, player)
-				
-				if isWinningState:
-					return vertex
-
-			# if there aren’t any winners then pick randomly
-			for v in graph.V:
-				if v.color == player:
-					return v
+			return PercolationPlayer.FourVerticesLeft(graph, player)
 
 		# if there's 3 vertices in the graph
 		if len(graph.V) == 3:
@@ -395,9 +427,10 @@ class PercolationPlayer:
 			chosen_vertex = Vertex(3) #placeholder
 			for vertex in graph.V:
 				if vertex.color == player:
-					num_triangles = PercolationPlayer.getNumTriangles(graph, vertex)
+					num_triangles = PercolationPlayer.GetNumTriangles(graph, vertex)
 
 					if num_triangles < min_num_triangles:
 						min_num_triangles = num_triangles
 						chosen_vertex = vertex
 			return chosen_vertex
+
